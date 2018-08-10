@@ -23,7 +23,7 @@ class BallEnv(gym.Env):
 		self.speedx_ctrl_person = 0.8
 		self.speedy_ctrl_person = 0.8
 		self.num_rand_person = 0
-		self.action_space = spaces.Discrete(2) #forward, backward , left , right
+		self.action_space = spaces.Discrete(4) #forward, backward , left , right
 		self.observation_space = spaces.Box(np.array([0,0]),np.array([640,480]))
 		self.framecount = 0
 		self.seed()
@@ -43,9 +43,11 @@ class BallEnv(gym.Env):
 		#assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
 		state = self.state
 		x,y, goal_x , goal_y , dist_from_goal = state
-		speed_x = self.speedx_ctrl_person if action[0]==1 else -self.speedx_ctrl_person
-		speed_y = self.speedy_ctrl_person if action[1]==1 else -self.speedy_ctrl_person
-
+		##speed_x = self.speedx_ctrl_person if action[0]==1 else -self.speedx_ctrl_person
+		##speed_y = self.speedy_ctrl_person if action[1]==1 else -self.speedy_ctrl_person
+		#print("ACTION", action)
+		speed_x = self.speedx_ctrl_person*action[0]
+		speed_y = self.speedy_ctrl_person*action[1]
 		new_x = x+speed_x
 		new_y = y+speed_y
 
@@ -74,7 +76,7 @@ class BallEnv(gym.Env):
 		return np.array(self.state)
 	
 
-	def render(self, mode = 'rgb_array'):
+	def render(self, mode = 'human'):
 
 
 		screen_width = 650
@@ -99,7 +101,7 @@ class BallEnv(gym.Env):
 		self.prTrans.set_translation(x[0],x[1])
 		self.goalobj.set_translation(x[2],x[3])
 
-		return self.viewer.render(return_rgb_array = mode == 'rgb_array')
+		return self.viewer.render(return_rgb_array = mode == 'human')
 
 	def close(self):
 		if self.viewer: self.viewer.close()
