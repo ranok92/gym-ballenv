@@ -5,6 +5,8 @@ import gym_ballenv
 import numpy as np
 import readchar
 from pyglet.window import key
+import os
+
 
 env = gym.make('gymball-v0') # create the environment
 env.mode = 'human'
@@ -13,7 +15,7 @@ SKIP_CONTROL = 0
 human_agent_action = np.array([0,0])
 human_wants_restart = False
 human_sets_pause = False
-
+f = None
 ACTIONS = env.action_space.n
 
 
@@ -39,13 +41,13 @@ def key_press(key, mod):
 	if key==0xff0d: human_wants_restart = True
 	if key==32: human_sets_pause = not human_sets_pause
 	if key==65362L: #up arrow
-		human_agent_action[1] = 5
+		human_agent_action[1] = 10
 	if key==65361L: #left arrow
-		human_agent_action[0] = -5
+		human_agent_action[0] = -10
 	if key==65363L:
-		human_agent_action[0] = 5
+		human_agent_action[0] = 10
 	if key==65364L:
-		human_agent_action[1] = -5
+		human_agent_action[1] = -10
 	#human_agent_action = a
 
 
@@ -81,6 +83,7 @@ def rollout(env):
             skip -= 1
 
         obser, r, done, info = env.step(a)
+        f.write(str(human_agent_action)+',')
         if r != 0:
             print("reward %0.3f" % r)
         total_reward += r
@@ -90,8 +93,8 @@ def rollout(env):
         if human_wants_restart: break
         while human_sets_pause:
             env.render()
-            time.sleep(0.1)
-        time.sleep(0.1)
+            time.sleep(0.5)
+        time.sleep(0.5)
     print("timesteps %i reward %0.2f" % (total_timesteps, total_reward))
 
 
@@ -103,7 +106,7 @@ for episode in range(10):
     obs = env.reset() # initial obersevation, carts horizontal positon (0.0 for center), carts velocity, pole angle, angular velocity (how fast the pole is falling)  
 
     action = [1,1] # move the cart left or right
-    if env.mode!='human':
+    if env.mode=='rgb_array':
  
     	for step in range (1000): # 1000 total steps, dont want to run forever
       
@@ -120,19 +123,28 @@ for episode in range(10):
         	if done:
         		totals.append(episode_rewards)
         		break
-    else:
-        
-		env.render()
-		env.unwrapped.viewer.window.on_key_press = key_press
-		env.unwrapped.viewer.window.on_key_release = key_release
-		print("ACTIONS={}".format(ACTIONS))
-		print("Press keys 1 2 3 ... to take actions 1 2 3 ...")
-		print("No keys pressed is taking action,", action)
-		print('human_agent_action',human_agent_action)
-		while 1:
-			window_still_open = rollout(env)
-			print('window_still_open',window_still_open)
-			if window_still_open==False: break
+    if env.mode=='human':
+    	cur_folder = os.getcwd()
+    	log_list = os.listdir(os.path.join(cur_folder,'pathlogs'))
+    	counter = len(log_list)+1
+        print('Starting human controller version.')
+        print('Controller  : Arrow keys')
+        file_name = 'Trial_no_'+str(counter)
+        path = os.path.join('pathlogs',file_name)
+        f = open(path,'w')
+        env.render()
+        env.unwrapped.viewer.window.on_key_press = key_press
+        env.unwrapped.viewer.window.on_key_release = key_release
+        print("ACTIONS={}".format(ACTIONS))
+        print("Press keys 1 2 3 ... to take actions 1 2 3 ...")
+        print("No keys pressed is taking action,", action)
+        print('human_agent_action',human_agent_action)
+        while 1:
+        	window_still_open = rollout(env)
+        	print('window_still_open',window_still_open)
+        	if window_still_open==False: 
+        		f.close()
+        		break
 
 print(totals)
 print('The longest number of timesteps the pole was balanced: ' + str(max(totals)))

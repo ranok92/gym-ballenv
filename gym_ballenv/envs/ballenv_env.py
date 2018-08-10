@@ -30,7 +30,7 @@ class BallEnv(gym.Env):
 		self.viewer = None
 		self.state = None
 		self.steps_beyond_done = None
-		self.threshold = 10
+		self.threshold = 100
 		self.timepenalty = 20
 		
 	def seed(self, seed=None):
