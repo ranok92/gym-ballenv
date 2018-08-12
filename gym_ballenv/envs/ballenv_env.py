@@ -11,8 +11,8 @@ class obstacles(object):
 
 		self.x = np.random.randint(640)
 		self.y = np.random.randint(480)
-		self.curr_goal = None
-		self.speed = None
+		self.curr_goal = (300,200) #this is a tuple (x,y)
+		self.speed = 10
 		self.proximity_threshold_1 = 1000
 		self.threshold_1_penalty = -100000
 		self.proximity_threshold_2 = 90
@@ -49,7 +49,7 @@ class BallEnv(gym.Env):
 		self.threshold = 100
 		self.timepenalty = 20
 
-		self.no_of_static_obstacles = 2
+		self.no_of_static_obstacles = 6
 		self.no_of_dynamic_obstacles = 0
 		self.total_obstacles = self.no_of_static_obstacles+self.no_of_dynamic_obstacles
 		self.obstacle_list = []
@@ -107,7 +107,9 @@ class BallEnv(gym.Env):
 		##
 
 		##loop to move each of the dynamic obstacles using move function
+		for i in self.obstacle_list:
 
+			self.move_obstacles(i)
 		##
 		dist = math.pow(self.goal_x-new_x,2)+math.pow(self.goal_y-new_y,2)
 		self.state = None
@@ -157,8 +159,26 @@ class BallEnv(gym.Env):
 
 
 	def move_obstacles(self, obstacle):
+		move_list = [(1,1) , (1,-1) , (1, 0) , (0,1) , (0,-1),(0,0) , (-1,1),(-1,-1),(-1,-1)]
+		if obstacle.speed!=None:
 
-		return 0
+			tempx = obstacle.curr_goal[0] - obstacle.x
+			tempy = obstacle.curr_goal[1] - obstacle.y
+
+			if np.random.randint(100)<68:
+
+				obstacle.x += (tempx/abs(tempx))*obstacle.speed
+				obstacle.y += (tempy/abs(tempy))*obstacle.speed
+
+				
+			else:
+
+				i = np.random.randint(9)
+				obstacle.x += move_list[i][0]*obstacle.speed
+				obstacle.y += move_list[i][1]*obstacle.speed
+				
+				
+		
 
 
 	def render(self, mode = 'human'):
