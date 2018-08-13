@@ -6,9 +6,35 @@ import numpy as np
 import readchar
 from pyglet.window import key
 import os
+import argparse
 
 
+def read_arguments():
+
+    parser = argparse.ArgumentParser(description='Insert details about the Environment :')
+    parser.add_argument('--static_obstacles' , default = 5 , type = int , help='No of static obstacles to be deployed in the environment')
+    parser.add_argument('--dynamic_obstacles' , default = 4 , type=int , help='No. of dynamic obstacles to be deployed in the environment')
+    parser.add_argument('--obstacle_speed', default= [10,10,10,10], nargs='+' , type=int , help = 'List of speed for the dynamic obstacles')
+    parser.add_argument('--obs_goal_position' , nargs='+', default = [ (300,400) , (300,400) , (600,300) , (600,300) ] , help="List of goal positions for the dynamic obstacles. Use this format 'x_coord,y_coord'")
+    parser.add_argument('--time_step_for_change' , default = 50 , type=int)
+    #parser.add_arguement('--')
+    parser.add_argument('--rd_th_obs' , type=int , default=60 , help='Centainity in the action taken by the obstacles(0-100 where 100 means no uncertainty)')
+    parser.add_argument('--rd_th_agent' , type=int , default=80 , help='Centainity in the action taken by the agent(0-100 where 100 means no uncertainty)')
+    parser.add_argument('--static_thresholds' , nargs='+' , default = [10000,2500] , type=int , help='Penalty thresholds for static obstacles.')
+    parser.add_argument('--dynamic_thresholds' , nargs='+' , default = [10000,2500] , type=int , help='Penalty thresholds for dynamic obstacles')
+    parser.add_argument('--static_penalty' , nargs='+' , default=[10000,50000] , type=int ,  help='Penalty suffered for crossing thresholds for static obstacles')
+    parser.add_argument('--dynamic_penalty' , nargs='+' , default=[10000,50000] , type=int ,  help='Penalty suffered for crossing thresholds for dynamic obstacles')
+    args = parser.parse_args()
+    return args
+
+args = read_arguments()
+
+print('sssss',type(args.obs_goal_position[1]))
+
+print(args)
 env = gym.make('gymball-v0') # create the environment
+print(type(env.unwrapped))
+env.unwrapped.customize_environment(args)
 env.mode = 'human'
 env.reset()
 SKIP_CONTROL = 0
@@ -17,6 +43,7 @@ human_wants_restart = False
 human_sets_pause = False
 f = None
 ACTIONS = env.action_space.n
+
 
 
 def basic_policy(obs): # determines what action to take
@@ -34,35 +61,35 @@ def basic_policy(obs): # determines what action to take
 
 
 
-def key_press(key, mod):
+def key_press(k, mod):
 	print('in key press',key)
 	#a = np.zeros(2)
 	global human_agent_action, human_wants_restart, human_sets_pause
-	if key==0xff0d: human_wants_restart = True
-	if key==32: human_sets_pause = not human_sets_pause
-	if key==65362L: #up arrow
+	if k==0xff0d: human_wants_restart = True
+	if k==32: human_sets_pause = not human_sets_pause
+	if k==key.UP: #65362L: #up arrow
 		human_agent_action[1] = 10
-	if key==65361L: #left arrow
+	if k==key.LEFT:#65361L: #left arrow
 		human_agent_action[0] = -10
-	if key==65363L:
+	if k==key.RIGHT:#65363L:
 		human_agent_action[0] = 10
-	if key==65364L:
+	if k==key.DOWN:#65364L:
 		human_agent_action[1] = -10
 	#human_agent_action = a
 
 
 
-def key_release(key, mod):
-	print('in key release',key)
+def key_release(k, mod):
+	print('in key release',k)
 	global human_agent_action
-	a = int( key - ord('0') )
-	if key==65362L: #up arrow
+	a = int( k - ord('0') )
+	if k==key.UP:#65362L: #up arrow
 		human_agent_action[1] = 0
-	if key==65361L: #left arrow
+	if k==key.LEFT:#65361L: #left arrow
 		human_agent_action[0] = 0
-	if key==65363L:
+	if k==key.RIGHT:#65363L:
 		human_agent_action[0] = 0
-	if key==65364L:
+	if k==key.DOWN:#65364L:
 		human_agent_action[1] = 0
 
 
