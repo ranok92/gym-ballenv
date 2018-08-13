@@ -202,7 +202,7 @@ class BallEnv(gym.Env):
 			reward = self.calculate_reward()
 		else:
 
-			print("you have done it!!!!!")
+			reward = self.calculate_reward()
 
 		return np.array(self.state) , reward , done , {}
 

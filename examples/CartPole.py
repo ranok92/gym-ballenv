@@ -22,18 +22,31 @@ def read_arguments():
     parser.add_argument('--rd_th_agent' , type=int , default=80 , help='Centainity in the action taken by the agent(0-100 where 100 means no uncertainty)')
     parser.add_argument('--static_thresholds' , nargs='+' , default = [10000,2500] , type=int , help='Penalty thresholds for static obstacles.')
     parser.add_argument('--dynamic_thresholds' , nargs='+' , default = [10000,2500] , type=int , help='Penalty thresholds for dynamic obstacles')
-    parser.add_argument('--static_penalty' , nargs='+' , default=[10000,50000] , type=int ,  help='Penalty suffered for crossing thresholds for static obstacles')
-    parser.add_argument('--dynamic_penalty' , nargs='+' , default=[10000,50000] , type=int ,  help='Penalty suffered for crossing thresholds for dynamic obstacles')
+    parser.add_argument('--static_penalty' , nargs='+' , default=[-10000,-50000] , type=int ,  help='Penalty suffered for crossing thresholds for static obstacles')
+    parser.add_argument('--dynamic_penalty' , nargs='+' , default=[-10000,-50000] , type=int ,  help='Penalty suffered for crossing thresholds for dynamic obstacles')
     args = parser.parse_args()
     return args
 
+def assert_arguments(args):
+
+    assert len(args.obstacle_speed)== args.dynamic_obstacles, "The length of the list of obstacle_speed does not match the no. of dynamic obstacles"
+    assert len(args.obs_goal_position)==args.dynamic_obstacles , "The length of the list of obstacle_goal_position does not match the no. of dynamic obstacles"
+    assert len(args.static_thresholds)==2 , "The length of the list of static_thresholds is not equal to 2"
+    assert len(args.dynamic_thresholds)==2 , "The length of the list of dynamic_thresholds is not equal to 2"     #except Exception as error:
+    assert len(args.static_penalty)==2 , "The length of the list of static_penalty is not equal to 2"    
+    assert len(args.dynamic_penalty)==2 , "The length of the list of dynamic_penalty is not equal to 2"
+    #   print error
+    #    exit()
+
+
 args = read_arguments()
 
-print('sssss',type(args.obs_goal_position[1]))
+assert_arguments(args)
+#print('sssss',type(args.obs_goal_position[1]))
 
-print(args)
+#print(args)
 env = gym.make('gymball-v0') # create the environment
-print(type(env.unwrapped))
+#print(type(env.unwrapped))
 env.unwrapped.customize_environment(args)
 env.mode = 'human'
 env.reset()
@@ -123,13 +136,16 @@ def rollout(env):
             time.sleep(0.5)
         time.sleep(0.5)
     print("timesteps %i reward %0.2f" % (total_timesteps, total_reward))
+    return False
+
 
 
 
 totals = [] # list of the total reward accumulated for each episode, 10
 
-for episode in range(10):
+for episode in range(2):
     episode_rewards = 0 # the rewards for the episode, in this case just "staying alive" or running as long as possible
+    print("STRTING")
     obs = env.reset() # initial obersevation, carts horizontal positon (0.0 for center), carts velocity, pole angle, angular velocity (how fast the pole is falling)  
 
     action = [1,1] # move the cart left or right
@@ -173,8 +189,8 @@ for episode in range(10):
         		f.close()
         		break
 
-print(totals)
-print('The longest number of timesteps the pole was balanced: ' + str(max(totals)))
+#print(totals)
+#print('The longest number of timesteps the pole was balanced: ' + str(max(totals)))
     
 
 
