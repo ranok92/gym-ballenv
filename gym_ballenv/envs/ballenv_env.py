@@ -5,13 +5,23 @@ import numpy as np
 from gym import error ,spaces, utils
 from gym.utils import seeding
 
+
+
+_screen_height = 100
+_screen_width = 100
+_stripobsx = 0
+_stripobsy = 20
+_stripgoalx = 100
+_stripgoaly = 20
+_stripagentx = 100
+_stripagenty = 10
 class obstacles(object):
 	"""docstring for obstacles"""
 	goals = None
 	def __init__(self):
 
-		self.x = np.random.randint(40,50)
-		self.y = np.random.randint(40,50)
+		self.x = np.random.randint(_stripobsx,_screen_width-_stripobsx)
+		self.y = np.random.randint(_stripobsy,_screen_height-_stripobsy)
 		self.curr_goal = None #this is a tuple (x,y)
 		self.speed = 0
 		self.goal_change_counter = None
@@ -31,8 +41,8 @@ class BallEnv(gym.Env):
 
 	def __init__(self):
 
-		self.goal_x = np.random.randint(100)
-		self.goal_y = np.random.randint(100)
+		self.goal_x = np.random.randint(_screen_width)
+		self.goal_y = np.random.randint(_screen_height)
 		self.mass_rand_person = 1
 		self.mass_ctrl_person = 0.5
 		self.radius_rand_person = 20
@@ -44,17 +54,18 @@ class BallEnv(gym.Env):
 		self.agent_uncertainty_threshold = None
 		self.num_rand_person = 0
 		self.action_space = spaces.Discrete(4) #forward, backward , left , right
-		self.observation_space = spaces.Box(np.array([0,0]),np.array([100,100]))
+		self.observation_space = spaces.Box(np.array([0,0]),np.array([_screen_width,_screen_height]))
 		self.framecount = 0
 		self.seed()
 		self.viewer = None
 		self.state = None
 		self.steps_beyond_done = None
-		self.threshold_goal = 20
+		self.threshold_goal = 10
 		self.timepenalty = 0
 		self.total_reward_accumulated = 0
 		self.reward_threshold = -20000
 		self.old_dist = None
+		self.total_distance = None
 
 		#information related to the obstacles
 		self.obstacle_speed_list = []
@@ -100,16 +111,16 @@ class BallEnv(gym.Env):
 
 	def reset(self):
 		self.obstacle_list = []
-		self.goal_x = np.random.randint(0,80)
-		self.goal_y = np.random.randint(85,100)
-		agent_x = np.random.randint(0,80)
-		agent_y = np.random.randint(0,15)
+		self.goal_x = np.random.randint(_screen_width-_stripgoalx,_screen_width)
+		self.goal_y = np.random.randint(_screen_height-_stripgoaly,_screen_height)
+		agent_x = np.random.randint(0,_stripagentx)
+		agent_y = np.random.randint(0,_stripagenty)
 		dist = math.sqrt(math.pow(self.goal_x-agent_x,2)+math.pow(self.goal_y-agent_y,2))
 		self.old_dist = dist
 		while(1):
 			if self.calculate_distance((self.goal_x,self.goal_y),(agent_x,agent_y))<50:
-				agent_x = np.random.randint(0,80)
-				agent_y = np.random.randint(0,20)
+				agent_x = np.random.randint(0,_stripagentx)
+				agent_y = np.random.randint(0,_stripagenty)
 			else:
 				break
 		self.state = [(agent_x , agent_y) , (self.goal_x , self.goal_y) , dist]
@@ -118,17 +129,17 @@ class BallEnv(gym.Env):
 		#intialize the static obstacles
 		for i in range(self.no_of_static_obstacles):
 			while(1):
-				print("hit")
+				#print("hit")
 				temp_obs = obstacles()
 				temp_obs.proximity_threshold_1 = self.st_obs_prox_thresh[0]
 				temp_obs.proximity_threshold_2 = self.st_obs_prox_thresh[1]
 				temp_obs.threshold_1_penalty = self.st_obs_prox_penalty[0]
 				temp_obs.threshold_2_penalty = self.st_obs_prox_penalty[1]
-				print("agent",self.state[0])
-				print("goal",self.state[1])
-				print("obstacle",temp_obs.x,temp_obs.y)
-				print("Agent check",self.check_overlap_rect((temp_obs.x,temp_obs.y),(agent_x,agent_y),self.radius_rand_person))
-				print("Goal check",self.check_overlap_rect((temp_obs.x,temp_obs.y),(self.goal_x,self.goal_y),self.radius_rand_person))
+				#print("agent",self.state[0])
+				#print("goal",self.state[1])
+				#print("obstacle",temp_obs.x,temp_obs.y)
+				#print("Agent check",self.check_overlap_rect((temp_obs.x,temp_obs.y),(agent_x,agent_y),self.radius_rand_person))
+				#print("Goal check",self.check_overlap_rect((temp_obs.x,temp_obs.y),(self.goal_x,self.goal_y),self.radius_rand_person))
 				#if (self.check_overlap((temp_obs.x,temp_obs.y),(agent_x,agent_y)) and self.check_overlap((temp_obs.x,temp_obs.y),(self.goal_x,self.goal_y))):
 				if (not self.check_overlap_rect((temp_obs.x,temp_obs.y),(agent_x,agent_y),self.radius_rand_person) and not self.check_overlap_rect((temp_obs.x,temp_obs.y),(self.goal_x,self.goal_y),self.radius_rand_person)):
 					self.static_obstacle_list.append(temp_obs)
@@ -150,6 +161,8 @@ class BallEnv(gym.Env):
 			self.dynamic_obstacle_list.append(temp_obs)
 			self.state.append((temp_obs.x,temp_obs.y))
 			self.obstacle_list.append(temp_obs)
+
+		self.total_distance = self.calculate_distance(self.state[0],self.state[1])
 		return np.array(self.state)
 
 
@@ -171,13 +184,13 @@ class BallEnv(gym.Env):
 	def check_overlap(self,tup1,tup2):
 
 		dist = self.calculate_distance(tup1,tup2)
-		if dist>(self.radius_rand_person+self.radius_ctrl_person+20):
-			return True
-		else:
+		if dist>(self.radius_rand_person+self.radius_ctrl_person):
 			return False
+		else:
+			return True
 
 	def check_overlap_rect(self,tup1,tup2,rad):
-		if abs(tup1[0]-tup2[0]+self.radius_ctrl_person)<rad and abs(tup1[1]-tup2[1]+self.radius_ctrl_person)<rad/2:
+		if abs(tup1[0]-tup2[0])<(rad+self.radius_ctrl_person) and abs(tup1[1]-tup2[1])<(rad/2+self.radius_ctrl_person):
 			return True
 		else:
 			return False
@@ -189,7 +202,7 @@ class BallEnv(gym.Env):
 		done = False
 		dist = self.calculate_distance(self.state[0],self.state[1])
 		reward = -self.timepenalty
-		#reward += (self.old_dist-dist)
+		reward += (self.old_dist-dist)/self.total_distance
 
 		for obs in self.obstacle_list:
 			'''
@@ -203,9 +216,11 @@ class BallEnv(gym.Env):
 				done = True
 				continue
 			'''
-			done = self.check_overlap_rect(self.state[0],(obs.x,obs.y),self.radius_rand_person)
+			done = self.check_overlap(self.state[0],(obs.x,obs.y))
+			#done = self.check_overlap_rect(self.state[0],(obs.x,obs.y),self.radius_rand_person)
 			if done:
 				reward -= obs.threshold_2_penalty
+				break
 		if dist < self.threshold_goal:
 
 			reward += 1
@@ -237,10 +252,10 @@ class BallEnv(gym.Env):
 			new_x = 0
 		if new_y<0:
 			new_y = 0
-		if new_x>100:
-			new_x = 100
-		if new_y>100:
-			new_y = 100
+		if new_x>_screen_width:
+			new_x = _screen_width
+		if new_y>_screen_height:
+			new_y = _screen_height
 
 		##loop to move each of the dynamic obstacles using move function
 		for i in self.dynamic_obstacle_list:
@@ -271,6 +286,7 @@ class BallEnv(gym.Env):
 		#print("Accumulated_reward :", self.total_reward_accumulated)
 		#time.sleep(.2)
 		return np.array(self.state) , reward , done , {}
+		#return 
 
 
 	
@@ -279,8 +295,8 @@ class BallEnv(gym.Env):
 		from gym.envs.classic_control import rendering
 		l = self.radius_rand_person
 		if obstacle.speed==0:
-			#rend_obs = rendering.make_circle(self.radius_rand_person)
-			rend_obs = rendering.FilledPolygon([(-l,-l/2),(-l,l/2),(l,l/2),(l,-l/2)])
+			rend_obs = rendering.make_circle(self.radius_rand_person)
+			#rend_obs = rendering.FilledPolygon([(-l,-l/2),(-l,l/2),(l,l/2),(l,-l/2)])
 			rend_obs.set_color(100,0,0)
 			#rendering._add_attrs(rend_obs,rendering.Color((100,100,200,10)))
 			#rend_obs.add_attrs(obs_color)
@@ -337,16 +353,16 @@ class BallEnv(gym.Env):
 		
 
 
-	def render(self, mode = 'rgb_array'):
+	def render(self, mode = 'rgb_array' ,close = True):
 
 
-		screen_width = 100
-		screen_height = 100
+		screen_width = _screen_width
+		screen_height = _screen_height
 
 		if self.viewer is None:
 
 			from gym.envs.classic_control import rendering
-			self.viewer = rendering.Viewer(screen_width, screen_height)
+			self.viewer = rendering.Viewer(screen_width, screen_height,display=None)
 			ctrl_person = rendering.make_circle(self.radius_ctrl_person)
 			self.prTrans = rendering.Transform()
 			ctrl_person.add_attr(self.prTrans)
