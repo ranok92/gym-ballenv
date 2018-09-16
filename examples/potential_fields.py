@@ -15,7 +15,7 @@ _normalizing_dist = math.sqrt(pow(_screen_width,2)+pow(_screen_height,2))
 def read_arguments():
 
     parser = argparse.ArgumentParser(description='Insert details about the Environment :')
-    parser.add_argument('--static_obstacles' , default = 3 , type = int , help='No of static obstacles to be deployed in the environment')
+    parser.add_argument('--static_obstacles' , default = 23 , type = int , help='No of static obstacles to be deployed in the environment')
     parser.add_argument('--dynamic_obstacles' , default = 0 , type=int , help='No. of dynamic obstacles to be deployed in the environment')
     parser.add_argument('--obstacle_speed', default= [], nargs='+' , help = 'List of speed for the dynamic obstacles')
     parser.add_argument('--obs_goal_position' , nargs='+', default = [] , help="List of goal positions for the dynamic obstacles. Use this format 'x_coord,y_coord'")
@@ -111,7 +111,7 @@ def obstacle_list_from_ref_state(ref_state):
 	return obstacle_list
 
 class PotentialField():
-	def __init__(self,k = 5,eta = 100 ,window_size = 10 ,limit = 5):
+	def __init__(self,k = 5,eta = 300 ,window_size = 5 ,limit = 5 ,speed = 2):
 
 		self.KP = k
 		self.ETA = eta
@@ -119,6 +119,7 @@ class PotentialField():
 		self.window_size = window_size
 		self.epsilon = 0.5
 		self.pfield = None
+		self.speed  = speed
 		self.motion = self.get_motion_model()
 		self.globalpath = {}
 		self.same_state_penalty = 2
@@ -128,8 +129,16 @@ class PotentialField():
 
 		#the value in agent is local coordinates
 		#it needs to be converted to global
+		#print "single run"
+		#print "Global PATH :",self.globalpath
 		global_coord = (agent[0]-self.window_size/2+loc_pos[0], agent[1]-self.window_size/2+loc_pos[1])
-		return 0.5*self.KP*np.hypot(global_coord[0]-goal[0],global_coord[1]-goal[1])
+		rep_penalty = self.repeat_penalty(global_coord)
+		if global_coord in self.globalpath:
+			rep = self.globalpath[global_coord]
+		else:
+			rep = 0
+		#print "Global coord : {}, Repetation : {}, Penalty : {}".format(global_coord,rep,rep_penalty)
+		return 0.5*self.KP*np.hypot(global_coord[0]-goal[0],global_coord[1]-goal[1])+rep_penalty
 
 	def calculate_negative_Potential_btwpoints(self,agent,obs):
 
@@ -140,6 +149,15 @@ class PotentialField():
 		else:
 			return 0
 
+
+	def repeat_penalty(self,position):
+
+		if position in self.globalpath:
+
+			return self.same_state_penalty*self.globalpath[position]
+
+		else:
+			return 0
 
 	def track_global_motion(self,agent):
 
@@ -177,15 +195,16 @@ class PotentialField():
 
 	def generate_local_Potential_Field(self, agent ,goal , obstacleList):
 
+		self.track_global_motion(agent)
 		pfield = np.zeros((self.window_size,self.window_size))
 		v = self.window_size
 		for r in range(v):
 
 			for c in range(v):
+				#print "Calculating potential field for {}".format(agent)
 
 				#the local cooridinate gets converted to global coordinates
 				loc_pos = (c,r)
-
 				pfield[r,c] = self.calculate_positive_Potential_btwpoints(agent,loc_pos,goal) + self.calculate_negative_Potential_shortest_dist(loc_pos,obstacleList)
 
 				#print (r,c)
@@ -199,33 +218,27 @@ class PotentialField():
 
 	def take_step(self):
 
-		print "new step"
+		#print "new step"
 		cur_x = int(self.window_size/2)
 		cur_y = int(self.window_size/2)
 		#print self.pfield
 		#print "The current potential", cur_potential
 		candidate_action = (0,0)
-		for c in count(1):
-			cur_potential = self.pfield[cur_x,cur_y]
-			print cur_potential
-			for i in range(len(self.motion)):
-				inx = cur_x+self.motion[i][0]
-				iny = cur_y+self.motion[i][1]
-				new_potential = self.pfield[iny,inx]
-				#print "Position in the grid :x:{},y:{}".format(inx,iny)
-				#print "new potential :", new_potential
-				#print "Corresponding action :",self.motion[i]
-				if new_potential < cur_potential:
-					#print "Here"
-					cur_potential = new_potential
-					candidate_action = self.motion[i]
+		#for c in count(1):
+		cur_potential = self.pfield[cur_x,cur_y]
+		#print cur_potential
+		for i in range(len(self.motion)):
+			inx = cur_x+self.motion[i][0]*self.speed
+			iny = cur_y+self.motion[i][1]*self.speed
+			new_potential = self.pfield[iny,inx]
+			#print "Position in the grid :x:{},y:{}".format(inx,iny)
+			#print "new potential :", new_potential
+			#print "Corresponding action :",self.motion[i]
+			if new_potential < cur_potential:
+				#print "Here"
+				cur_potential = new_potential
+				candidate_action = self.motion[i]
 
-			if candidate_action==(0,0):
-				
-				self.pfield[cur_x,cur_y] = self.pfield[cur_x,cur_y]+5
-				#print self.pfield[cur_x,cur_y]
-			else:
-				break
 		return candidate_action
 
 
@@ -241,20 +254,22 @@ print field.shape
 
 
 
+
+
+SPEED = 2
 WINDOW = 10
-
-
-
 args = read_arguments()
 env = gym.make('gymball-v0') # create the environment
 env.unwrapped.customize_environment(args)
 
 env.reset()
 
-pf = PotentialField(window_size =WINDOW)
 
 for i_episode in count(1):
 	state = env.reset()
+	print "Starting new episode ... "
+	pf = PotentialField(window_size =WINDOW)
+
 	for t in range(1000):
 		ref_state = prep_state4(state,WINDOW)
 		#print "The Ref_state :",ref_state
@@ -262,15 +277,18 @@ for i_episode in count(1):
 		#print "The obstacle list :",obstacle_list
 		agent =  state[0]
 		pf.generate_local_Potential_Field(agent,state[1],obstacle_list)
-		'''
+		#print "State",state[0]
+		#print pf.globalpath
+		#print pf.pfield.shape
 		fig = plt.figure()
 		ax = fig.add_subplot(111,projection='3d')
 		x = y = np.arange(0,WINDOW)
 		X,Y = np.meshgrid(x,y)
 		ax.plot_wireframe(X,Y,pf.pfield)
-		'''
 		#plt.show()
 		action = pf.take_step()
+		print "Action :",action
+
 		#print "action taken",action
 		#raw_input("keypress to continue")
 		state, reward, done, _ = env.step(action)
