@@ -30,18 +30,17 @@ from collections import namedtuple
 
 #display =Display(visible=0,size=(1400,900))
 #display.start()
-_screen_height = 100
-_screen_width = 100
-_normalizing_dist = math.sqrt(pow(_screen_width,2)+pow(_screen_height,2))
-
+#_screen_height = 100
+#_screen_width = 100
+#_normalizing_dist = math.sqrt(pow(_screen_width,2)+pow(_screen_height,2))
 
 def read_arguments():
 
     parser = argparse.ArgumentParser(description='Insert details about the Environment :')
-    parser.add_argument('--static_obstacles' , default = 3 , type = int , help='No of static obstacles to be deployed in the environment')
-    parser.add_argument('--dynamic_obstacles' , default = 0 , type=int , help='No. of dynamic obstacles to be deployed in the environment')
-    parser.add_argument('--obstacle_speed', default= [], nargs='+' , help = 'List of speed for the dynamic obstacles')
-    parser.add_argument('--obs_goal_position' , nargs='+', default = [] , help="List of goal positions for the dynamic obstacles. Use this format 'x_coord,y_coord'")
+    parser.add_argument('--static_obstacles' , default = 13 , type = int , help='No of static obstacles to be deployed in the environment')
+    parser.add_argument('--dynamic_obstacles' , default = 5 , type=int , help='No. of dynamic obstacles to be deployed in the environment')
+    parser.add_argument('--obstacle_speed', default= [1,1,1,1,1], nargs='+' , help = 'List of speed for the dynamic obstacles')
+    parser.add_argument('--obs_goal_position' , nargs='+', default = ['12,122','123,93','87,150','430,440','230,11'] , help="List of goal positions for the dynamic obstacles. Use this format 'x_coord,y_coord'")
     parser.add_argument('--time_step_for_change' , default = 50 , type=int)
     #parser.add_arguement('--')
     parser.add_argument('--rd_th_obs' , type=int , default=60 , help='Centainity in the action taken by the obstacles(0-100 where 100 means no uncertainty)')
@@ -113,11 +112,12 @@ class Policy(nn.Module):
         super(Policy, self).__init__()
 
         no_of_l1Nodes = 4+(window*window)
-        self.hidden_layer = no_of_l1Nodes*2
+        #self.hidden_layer = no_of_l1Nodes*2
+        self.hidden_layer = 128
         #self.hidden_layer =128
         self.fc1 = nn.Linear(no_of_l1Nodes, self.hidden_layer)
-        #self.fc2 = nn.Linear(128,128)
-        self.dropout = nn.Dropout(.5)
+        #self.fc2 = nn.Linear(self.hidden_layer,self.hidden_layer2)
+        #self.dropout = nn.Dropout(.5)
         self.action_head = nn.Linear(self.hidden_layer,9)
         self.value_head = nn.Linear(self.hidden_layer,1)
         #self.container_size = 5
@@ -129,7 +129,8 @@ class Policy(nn.Module):
 
 
     def forward(self, x):
-        x = self.dropout(F.relu(self.fc1(x)))
+        x = F.relu(self.fc1(x))
+        #x = F.relu(self.fc2(x))
         #x = F.relu(self.fc2(x))
         #print(x.size())
         #print(y.size())
@@ -385,13 +386,13 @@ def prep_state4(state,window):
     agent_pos = state[0]
     step_x = env.unwrapped.speedx_ctrl_person
     step_y = env.unwrapped.speedy_ctrl_person
-    start_x = agent_pos[0] - env.unwrapped.speedx_ctrl_person*2
-    start_y = agent_pos[1] - env.unwrapped.speedy_ctrl_person*2
+    start_x = agent_pos[0] - env.unwrapped.speedx_ctrl_person*int(window/2)
+    start_y = agent_pos[1] - env.unwrapped.speedy_ctrl_person*int(window/2)
     cur_x = start_x
     cur_y = start_y
-    for c in range(window):
-        for r in range(window):
-            cur_x = start_x + step_x*r
+    for r in range(window):
+        for c in range(window):
+            cur_x = start_x + step_x*c
             for i in range(3,len(state)):
                 #print(cur_x,cur_y)
                 #print(state[i])
@@ -402,7 +403,7 @@ def prep_state4(state,window):
                     ref_state[counter] = 1
                     break
             counter+=1
-        cur_y = start_y + step_y*c
+        cur_y = start_y + step_y*r
     #print("state",state)
     #print(ref_state)
     return torch.from_numpy(ref_state).float().to(device).unsqueeze(0)
@@ -471,7 +472,7 @@ ACTIONHISTORY = {}
 EXPLORATION = .4
 KVAL = 3
 ####################################
-TIMESTEPS = 10
+TIMESTEPS = 5
 env.unwrapped.customize_environment(args)
 mode = 'policy'
 env.reset()
@@ -486,7 +487,7 @@ ACTIONS = env.action_space.n
 
 ###crete the network#############
 #policy = Policy(args.static_obstacles)
-WINDOW = 30
+WINDOW = 5
 policy = Policy(WINDOW)
 #policy = PolicyCNN()
 #policy = PolicyLSTM(TIMESTEPS)
@@ -568,6 +569,7 @@ def main():
                 action,probs = select_action(state_tensor)
                 action = move_list[action]
                 #_,action = probs.topk(1)
+                #print action
                 ####work with map##########
                 ###actionupdated = update_MAP(ACTIONHISTORY,state[0],probs, action, EXPLORATION , KVAL)
                 ###action = move_list[actionupdated]
@@ -583,7 +585,7 @@ def main():
                 state, reward, done, _ = env.step(action)
                 #print("STATE",state)
                 #if args.render:
-                if i_episode%50==0: #and (b+1)%11==0:
+                if i_episode+1%100==0: #and (b+1)%11==0:
                     #print b
                     '''
                     fig2 = plt.figure(2)
@@ -613,7 +615,7 @@ def main():
             print("no steps taken. Nothing to train")
         #running_reward = running_reward * 0.99 + t * 0.01
         #plotting the reward for each of the 10th iteration
-        if (i_episode%1==0):
+        if (i_episode%1==0 and t>0):
             #plotting the reward for each run
             fig =plt.figure(1)
             xs.append(i_episode)

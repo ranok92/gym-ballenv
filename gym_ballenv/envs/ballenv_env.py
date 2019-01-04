@@ -2,18 +2,19 @@ import gym
 import math
 import time
 import numpy as np
+import numpy.random as random
 from gym import error ,spaces, utils
 from gym.utils import seeding
 
 
-
-_screen_height = 100
-_screen_width = 100
+#random.seed(4)
+_screen_height = 500
+_screen_width = 500
 _stripobsx = 0
 _stripobsy = 20
-_stripgoalx = 100
+_stripgoalx = 500
 _stripgoaly = 20
-_stripagentx = 100
+_stripagentx = 500
 _stripagenty = 10
 class obstacles(object):
 	"""docstring for obstacles"""
@@ -49,8 +50,8 @@ class BallEnv(gym.Env):
 		self.radius_ctrl_person = 5
 		self.tau = 0.02
 		self.speed_rand_person = 1
-		self.speedx_ctrl_person = 2
-		self.speedy_ctrl_person = 2
+		self.speedx_ctrl_person = 1
+		self.speedy_ctrl_person = 1
 		self.agent_uncertainty_threshold = None
 		self.num_rand_person = 0
 		self.action_space = spaces.Discrete(4) #forward, backward , left , right
@@ -223,7 +224,7 @@ class BallEnv(gym.Env):
 				break
 		if dist < self.threshold_goal:
 
-			reward += 1
+			reward += 0
 
 		return reward,done
 
