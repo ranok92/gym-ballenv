@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 import math
-import gym 
+#import gym 
 import os
 import featureExtractor
 #random.seed(4)
@@ -87,7 +87,7 @@ class createBoardperFrame():
 		self.height = _screen_height
 		self.white = (255,255,255)
 		annotation_list = []
-		print pygame.init()
+		print(pygame.init())
 		if not os.path.isfile(annotation_file):
 			print ("The annotation file does not exist.")
 			return 0
@@ -314,8 +314,8 @@ class createBoardperFrame():
 class createBoard():
 
 	def __init__(self,height = _screen_height , display = False, width = _screen_width , agent_radius = 10 , static_obstacles = 0 , dynamic_obstacles = 0 , static_obstacle_radius = 10 , dynamic_obstacle_radius = 0 , obstacle_speed_list = []):
-		print pygame.init()
-		print "here"
+		print(pygame.init())
+		print("here")
 		self.clock = pygame.time.Clock()
 
 
@@ -515,72 +515,72 @@ class createBoard():
 	#*** added new for convenience
 	#this block is used to calculate the local window state representation
 	#********************************************************************
-	def block_to_arrpos(self,window_size,x,y):
-
-		a = (window_size**2-1)/2
-		b = window_size
-		pos = a+(b*y)+x
-
-		return int(pos)
-
-	#unlike the method in ActorCritic, this method just returns the state in the form of a numpy array
-	def get_state_BallEnv(self, window_size = 5):
-
-	#state is a list of info where 1st position holds the position of the
-	#agent, 2nd the position of the goal , 3rd the distance after that,
-	#the positions of the obstacles in the world
-		#print(state)
-		window_size = window_size
-		block_width = 2
-
-		window_rows = window_size
-		row_start =  (window_rows-1)/2
-		window_cols = window_size
-		col_start = (window_cols-1)/2
-
-		ref_state = np.zeros(4+window_size**2)
-		#print(ref_state.shape)
-		a = (window_size**2-1)/2
-		ref_state[a+4] = 1
-		agent_pos = self.state[0]
-		goal_pos = self.state[1]
-		diff_x = goal_pos[0] - agent_pos[0]
-		diff_y = goal_pos[1] - agent_pos[1]
-		if diff_x >= 0 and diff_y >= 0:
-			ref_state[1] = 1
-		elif diff_x < 0  and diff_y >= 0:
-			ref_state[0] = 1
-		elif diff_x < 0 and diff_y < 0:
-			ref_state[3] = 1
-		else:
-			ref_state[2] = 1
-
-		for i in range(3,len(self.state)):
-
-			#as of now this just measures the distance from the center of the obstacle
-			#this distance has to be measured from the circumferance of the obstacle
-
-			#new method, simulate overlap for each of the neighbouring places
-			#for each of the obstacles
-			obs_pos = self.state[i][0:2]
-			obs_rad = self.state[i][2]
-			for r in range(-row_start,row_start+1,1):
-				for c in range(-col_start,col_start+1,1):
-					#c = x and r = y
-					temp_pos = (agent_pos[0] + c*block_width , agent_pos[1] + r*block_width)
-					if self.checkOverlap(temp_pos,self.agentRad, obs_pos, obs_rad):
-						pos = self.block_to_arrpos(window_size,r,c)
-
-						ref_state[pos]=1
-
-		#state is as follows:
-			#first - tuple agent position
-			#second -
-		#ref_state = torch.from_numpy(ref_state).to(self.device)
-		#ref_state = ref_state.type(torch.cuda.FloatTensor)
-		#ref_state = ref_state.unsqueeze(0)
-
-		return ref_state
+	# def block_to_arrpos(self,window_size,x,y):
+	#
+	# 	a = (window_size**2-1)/2
+	# 	b = window_size
+	# 	pos = a+(b*y)+x
+	#
+	# 	return int(pos)
+	#
+	# #unlike the method in ActorCritic, this method just returns the state in the form of a numpy array
+	# def get_state_BallEnv(self, window_size = 5):
+	#
+	# #state is a list of info where 1st position holds the position of the
+	# #agent, 2nd the position of the goal , 3rd the distance after that,
+	# #the positions of the obstacles in the world
+	# 	#print(state)
+	# 	window_size = window_size
+	# 	block_width = 2
+	#
+	# 	window_rows = window_size
+	# 	row_start =  (window_rows-1)/2
+	# 	window_cols = window_size
+	# 	col_start = (window_cols-1)/2
+	#
+	# 	ref_state = np.zeros(4+window_size**2)
+	# 	#print(ref_state.shape)
+	# 	a = (window_size**2-1)/2
+	# 	ref_state[a+4] = 1
+	# 	agent_pos = self.state[0]
+	# 	goal_pos = self.state[1]
+	# 	diff_x = goal_pos[0] - agent_pos[0]
+	# 	diff_y = goal_pos[1] - agent_pos[1]
+	# 	if diff_x >= 0 and diff_y >= 0:
+	# 		ref_state[1] = 1
+	# 	elif diff_x < 0  and diff_y >= 0:
+	# 		ref_state[0] = 1
+	# 	elif diff_x < 0 and diff_y < 0:
+	# 		ref_state[3] = 1
+	# 	else:
+	# 		ref_state[2] = 1
+	#
+	# 	for i in range(3,len(self.state)):
+	#
+	# 		#as of now this just measures the distance from the center of the obstacle
+	# 		#this distance has to be measured from the circumferance of the obstacle
+	#
+	# 		#new method, simulate overlap for each of the neighbouring places
+	# 		#for each of the obstacles
+	# 		obs_pos = self.state[i][0:2]
+	# 		obs_rad = self.state[i][2]
+	# 		for r in range(-row_start,row_start+1,1):
+	# 			for c in range(-col_start,col_start+1,1):
+	# 				#c = x and r = y
+	# 				temp_pos = (agent_pos[0] + c*block_width , agent_pos[1] + r*block_width)
+	# 				if self.checkOverlap(temp_pos,self.agentRad, obs_pos, obs_rad):
+	# 					pos = self.block_to_arrpos(window_size,r,c)
+	#
+	# 					ref_state[pos]=1
+	#
+	# 	#state is as follows:
+	# 		#first - tuple agent position
+	# 		#second -
+	# 	#ref_state = torch.from_numpy(ref_state).to(self.device)
+	# 	#ref_state = ref_state.type(torch.cuda.FloatTensor)
+	# 	#ref_state = ref_state.unsqueeze(0)
+	#
+	# 	return ref_state
 
 	#******************************************************************************************
 
@@ -705,40 +705,24 @@ class createBoard():
 			self.total_reward_accumulated+= reward
 			return reward,done
 
-'''
+
 if __name__ == "__main__":
-	print "ddd"
-	cb = createBoard()
+	print("ddd")
+	cb = createBoard(display=True)
 	for i in range(100):
-		print "Here"
+		print("Here")
 		cb.reset()
 		for j in range(300000):
 			if cb.display:
 				cb.render()
 			action = cb.take_action_from_user()
-			print action
+			print(action)
 			state ,reward ,done , _ = cb.step(action)
 			if done:
 				break
-		print reward 
-		print cb.total_reward_accumulated
+		print(reward) 
+		print(cb.total_reward_accumulated)
 		
 	pygame.quit()
 
-cb = createBoard()
-for i in range(100):
-	print "Here"
-	cb.reset()
-	for j in range(300000):
-		if cb.display:
-			cb.render()
-		action = cb.take_action_from_user()
-		print action
-		state ,reward ,done , _ = cb.step(action)
-		if done:
-			break
-	print reward 
-	print cb.total_reward_accumulated
-		
-pygame.quit()
-'''
+c
