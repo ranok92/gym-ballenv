@@ -285,15 +285,15 @@ if __name__=='__main__':
     state = []
     state.append(agent_pos) #all the other stuff are taken from the obstacleList info
     state.append(goal_pos)
-    print 'Densitysdd',densityFeatures(state, obstacle_List ,agent_rad , 10)
-    print 'SpeedOrientation',speedOrientationFeatures(state, obstacle_List , agent_rad , agent_vel)
-    print 'Socialforces',socialForcesFeatures(state,obstacle_List,agent_rad,agent_vel)
+    print ('Densitysdd',densityFeatures(state, obstacle_List ,agent_rad , 10))
+    print ('SpeedOrientation',speedOrientationFeatures(state, obstacle_List , agent_rad , agent_vel))
+    print ('Socialforces',socialForcesFeatures(state,obstacle_List,agent_rad,agent_vel))
     #print 'Distance from goal',state[2]
-    print featureExtractor(state,obstacle_List,agent_vel,agent_rad)
+    print (featureExtractor(state,obstacle_List,agent_vel,agent_rad))
     while True:
         visualizeEnvironment(agent_pos,goal_pos ,obstacle_List,agent_rad,agent_vel)
 
-    print featureExtractor(state,obstacle_List,agent_vel, agent_rad)
+    print (featureExtractor(state,obstacle_List,agent_vel, agent_rad))
 
 
 
