@@ -540,7 +540,7 @@ def main():
         yrwd = []
         #print("AgentPos",state[0])
         #print("Goal_pos",state[1])
-        #env.render()
+        env.render()
         #print("STate",state)
         print("Running episode :",i_episode)
         for b in range(1):
@@ -548,8 +548,8 @@ def main():
             #t = 0
             state = env.reset()
             for t in range(12000):  # Don't infinite loop while learning
-                if t==1888:
-                    env.render()
+                #if t==1888:
+                env.render()
                 ######prepare state#########
                 #patch = extract_patch(state)
                 #sec_part = prep_state2(state)
