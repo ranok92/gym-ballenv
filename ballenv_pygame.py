@@ -349,8 +349,8 @@ class createBoard():
 		self.dynamic_obstacle_list = []
 		self.obstacle_list = []
 		self.agent_action_keyboard = [False for i in range(4)]
-
-		#state : list
+		self.actionArray = [np.asarray([0,-1]),np.asarray([1,0]),np.asarray([0,1]),
+							np.asarray([-1,0])]		#state : list
 		#state[0] - tuple containing agent current position
 		#state[1] - tuple containing goal position.
 		#state[2] - distance from goal
@@ -439,7 +439,7 @@ class createBoard():
 
 			for i in range(len(self.agent_action_keyboard)):
 				if self.agent_action_keyboard[i]==True:
-					return i
+					return self.actionArray[i]
 
 		return None
 
@@ -715,7 +715,7 @@ if __name__ == "__main__":
 		for j in range(300000):
 			if cb.display:
 				cb.render()
-			action = cb.take_action_from_user()
+			action = cb.take_action_from_userKeyboard()
 			print(action)
 			state ,reward ,done , _ = cb.step(action)
 			if done:
@@ -725,4 +725,4 @@ if __name__ == "__main__":
 		
 	pygame.quit()
 
-c
+

@@ -1,6 +1,6 @@
 # basic CartPole simulation
 
-import gym , sys , time
+import gym, sys , time
 import gym_ballenv
 import numpy as np
 import readchar
@@ -113,7 +113,10 @@ class Policy(nn.Module):
 
         no_of_l1Nodes = 4+(window*window)
         #self.hidden_layer = no_of_l1Nodes*2
-        self.hidden_layer = 128
+        if window==5:
+            self.hidden_layer = 128
+        if window==10:
+            self.hidden_layer = 208
         #self.hidden_layer =128
         self.fc1 = nn.Linear(no_of_l1Nodes, self.hidden_layer)
         #self.fc2 = nn.Linear(self.hidden_layer,self.hidden_layer2)
